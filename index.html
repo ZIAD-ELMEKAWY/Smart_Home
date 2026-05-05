@@ -154,17 +154,123 @@
         .badge-danger { background: rgba(239,68,68,0.15);  color: var(--danger);  animation: dangerPulse 1s infinite; }
         @keyframes dangerPulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
 
-        .toggle-switch {
-            position: relative; width: 56px; height: 28px; background: #334155;
-            border-radius: 14px; cursor: pointer; transition: background 0.3s;
+        /* ── CIRCULAR SENSOR CARDS ── */
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
         }
-        .toggle-switch.active { background: var(--primary); }
-        .toggle-switch::after {
-            content: ''; position: absolute; width: 22px; height: 22px;
-            background: white; border-radius: 50%; top: 3px; left: 3px; transition: transform 0.3s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        .sensor-circle {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            aspect-ratio: 1 / 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
         }
-        .toggle-switch.active::after { transform: translateX(28px); }
+        .sensor-circle:hover {
+            border-color: var(--primary);
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(99,102,241,0.2);
+        }
+        .sensor-circle .sensor-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+        .sensor-circle .sensor-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+        .sensor-circle .sensor-value {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .sensor-circle .sensor-unit {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .sensor-circle .sensor-badge {
+            position: absolute;
+            bottom: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 10px;
+        }
+        .sensor-circle .sensor-ring {
+            position: absolute;
+            inset: 4px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            transition: border-color 0.5s;
+            pointer-events: none;
+        }
+        .sensor-circle.danger .sensor-ring { border-color: var(--danger); }
+        .sensor-circle.safe .sensor-ring { border-color: var(--success); }
+        .sensor-circle.warning .sensor-ring { border-color: var(--warning); }
+
+        /* ── LED BUTTON ── */
+        .led-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid var(--border);
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: var(--text-muted);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .led-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        }
+        .led-btn:active {
+            transform: scale(0.95);
+        }
+        .led-btn.on {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 0 30px rgba(99,102,241,0.5), 0 0 60px rgba(99,102,241,0.2);
+            animation: ledGlow 2s ease-in-out infinite alternate;
+        }
+        @keyframes ledGlow {
+            from { box-shadow: 0 0 20px rgba(99,102,241,0.4), 0 0 40px rgba(99,102,241,0.1); }
+            to { box-shadow: 0 0 35px rgba(99,102,241,0.7), 0 0 70px rgba(99,102,241,0.3); }
+        }
+        .led-btn .led-label {
+            position: absolute;
+            bottom: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
 
         /* ── ALERT BANNER ── */
         .alert-banner {
@@ -182,31 +288,57 @@
         .alert-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px; padding: 4px; }
         .alert-close:hover { color: var(--text); }
 
-        /* ── LOCK / GATE ── */
-        .lock-status {
-            display: flex; align-items: center; gap: 16px; padding: 16px;
-            background: rgba(16,185,129,0.1); border-radius: 12px; margin-top: 12px; transition: background 0.4s;
+        /* ── LOCK CARD (ENHANCED) ── */
+        .lock-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 30px;
         }
-        .lock-status.locked { background: rgba(239,68,68,0.1); }
-        .lock-status i { font-size: 32px; color: var(--success); transition: color 0.4s; }
-        .lock-status.locked i { color: var(--danger); }
-        .lock-info h4 { font-size: 14px; color: var(--text-muted); margin-bottom: 2px; }
-        .lock-info p { font-size: 18px; font-weight: 700; }
-
-        /* ── GATE CARD ── */
-        .gate-body {
-            display: flex; align-items: center; gap: 16px; padding: 16px;
-            border-radius: 12px; margin-top: 12px; transition: background 0.4s;
+        .lock-circle-btn {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 4px solid var(--border);
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 16px;
+            position: relative;
         }
-        .gate-body.gate-open    { background: rgba(16,185,129,0.12); }
-        .gate-body.gate-closed  { background: rgba(239,68,68,0.10); }
-        .gate-body.gate-closing { background: rgba(245,158,11,0.12); }
-        .gate-big-icon { font-size: 36px; transition: color 0.4s; }
-        .gate-info h4 { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
-        .gate-info p  { font-size: 18px; font-weight: 700; }
-        .gate-sub     { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+        .lock-circle-btn:hover {
+            transform: scale(1.08);
+        }
+        .lock-circle-btn:active {
+            transform: scale(0.95);
+        }
+        .lock-circle-btn.locked {
+            border-color: var(--danger);
+            color: var(--danger);
+            box-shadow: 0 0 25px rgba(239,68,68,0.3);
+        }
+        .lock-circle-btn.unlocked {
+            border-color: var(--success);
+            color: var(--success);
+            box-shadow: 0 0 25px rgba(16,185,129,0.3);
+        }
+        .lock-status-text {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .lock-status-sub {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
 
-        /* ── COUNTER CARD ── */
+        /* ── GATE COUNTER CARD ── */
         .counter-number {
             font-family: 'Rajdhani', sans-serif; font-size: 56px; font-weight: 700;
             background: linear-gradient(135deg, var(--primary), var(--info));
@@ -228,6 +360,7 @@
 
         @media (max-width: 768px) {
             .grid { grid-template-columns: 1fr; }
+            .sensor-grid { grid-template-columns: repeat(2, 1fr); }
             .top-bar { padding: 12px 16px; }
             .brand h1 { font-size: 16px; }
             .container { padding: 16px; }
@@ -237,6 +370,7 @@
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
     </style>
+<base target="_blank">
 </head>
 <body>
 
@@ -325,21 +459,19 @@
             <button class="alert-close" onclick="closeAlert()"><i class="fas fa-xmark"></i></button>
         </div>
 
-        <!-- Row 1: Lock + Environment + Wind -->
+        <!-- Row 1: Lock + Environment -->
         <div class="grid">
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title"><i class="fas fa-lock icon-lock"></i> Door Lock Status</div>
+            <!-- Door Lock Status Card (ENHANCED TAP) -->
+            <div class="card lock-card" id="lock-card">
+                <div class="card-title" style="margin-bottom: 20px;"><i class="fas fa-lock icon-lock"></i> Door Lock Status</div>
+                <div class="lock-circle-btn locked" id="lock-circle-btn" onclick="toggleLock()">
+                    <i class="fas fa-lock" id="lock-circle-icon"></i>
                 </div>
-                <div class="lock-status" id="lock-status">
-                    <i class="fas fa-lock-open" id="lock-icon"></i>
-                    <div class="lock-info">
-                        <h4>Current Status</h4>
-                        <p id="lock-text">Waiting for data...</p>
-                    </div>
-                </div>
+                <div class="lock-status-text" id="lock-status-text">LOCKED</div>
+                <div class="lock-status-sub" id="lock-status-sub">Tap to toggle lock</div>
             </div>
 
+            <!-- Environment Card -->
             <div class="card">
                 <div class="card-header">
                     <div class="card-title"><i class="fas fa-temperature-half icon-temp"></i> Environment</div>
@@ -354,7 +486,6 @@
                         <div class="value-display"><span id="hum-value">--</span><span class="value-unit">%</span></div>
                     </div>
                     <div>
-                        <!-- NEW: Wind Speed -->
                         <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">
                             <i class="fas fa-wind" style="color:var(--info);margin-right:4px;"></i>Wind Speed
                         </div>
@@ -364,28 +495,8 @@
             </div>
         </div>
 
-        <!-- Row 2: Gate Card + Gate Counter -->
+        <!-- Gate Opens Today Counter (REMOVED Gate Status, kept counter) -->
         <div class="grid">
-
-            <!-- Gate Status Card (NEW) -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title"><i class="fas fa-archway icon-gate"></i> Gate Status</div>
-                    <span class="status-badge" id="gate-badge" style="background:rgba(239,68,68,0.15);color:var(--danger);">
-                        <i class="fas fa-times-circle"></i> Closed
-                    </span>
-                </div>
-                <div class="gate-body gate-closed" id="gate-body">
-                    <i class="fas fa-archway gate-big-icon" id="gate-icon" style="color:var(--danger);"></i>
-                    <div class="gate-info">
-                        <h4>Gate State</h4>
-                        <p id="gate-text">CLOSED</p>
-                        <div class="gate-sub" id="gate-sub">Waiting for NRF command...</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Gate Open Counter Card (NEW) -->
             <div class="card">
                 <div class="card-header">
                     <div class="card-title"><i class="fas fa-hashtag icon-count"></i> Gate Opens Today</div>
@@ -403,55 +514,56 @@
             </div>
         </div>
 
-        <!-- Sensors Row -->
-        <div class="grid">
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title"><i class="fas fa-wind icon-gas"></i> Gas (MQ2)</div>
-                    <span class="status-badge badge-safe" id="gas-badge"><i class="fas fa-check-circle"></i> Safe</span>
-                </div>
-                <div class="value-display"><span id="gas-value">0</span><span class="value-unit"> ppm</span></div>
-                <div class="progress-bar"><div class="progress-fill" id="gas-bar" style="width:0%;background:var(--success);"></div></div>
+        <!-- Circular Sensors Row -->
+        <div class="sensor-grid">
+            <!-- Gas Sensor -->
+            <div class="sensor-circle safe" id="gas-circle">
+                <div class="sensor-ring"></div>
+                <div class="sensor-icon icon-gas"><i class="fas fa-wind"></i></div>
+                <div class="sensor-title">Gas (MQ2)</div>
+                <div class="sensor-value" id="gas-value-circle">0</div>
+                <div class="sensor-unit">ppm</div>
+                <div class="sensor-badge badge-safe" id="gas-badge-circle"><i class="fas fa-check-circle"></i> Safe</div>
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title"><i class="fas fa-cloud-rain icon-rain"></i> Rain Detector</div>
-                    <span class="status-badge badge-safe" id="rain-badge"><i class="fas fa-check-circle"></i> Dry</span>
-                </div>
-                <div class="value-display"><span id="rain-value">0</span><span class="value-unit"> units</span></div>
-                <div class="progress-bar"><div class="progress-fill" id="rain-bar" style="width:0%;background:var(--info);"></div></div>
+            <!-- Rain Sensor -->
+            <div class="sensor-circle safe" id="rain-circle">
+                <div class="sensor-ring"></div>
+                <div class="sensor-icon icon-rain"><i class="fas fa-cloud-rain"></i></div>
+                <div class="sensor-title">Rain Detector</div>
+                <div class="sensor-value" id="rain-value-circle">0</div>
+                <div class="sensor-unit">units</div>
+                <div class="sensor-badge badge-safe" id="rain-badge-circle"><i class="fas fa-check-circle"></i> Dry</div>
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title"><i class="fas fa-fire icon-flame"></i> Flame Sensor</div>
-                    <span class="status-badge badge-safe" id="flame-badge"><i class="fas fa-check-circle"></i> Safe</span>
-                </div>
-                <div class="value-display" id="flame-display" style="font-size:24px;margin-top:16px;">
-                    <i class="fas fa-shield-halved" style="color:var(--success);"></i>
-                    <span style="font-size:16px;margin-left:8px;color:var(--text-muted);">Safe</span>
-                </div>
+            <!-- Flame Sensor -->
+            <div class="sensor-circle safe" id="flame-circle">
+                <div class="sensor-ring"></div>
+                <div class="sensor-icon icon-flame"><i class="fas fa-fire"></i></div>
+                <div class="sensor-title">Flame Sensor</div>
+                <div class="sensor-value" id="flame-value-circle" style="font-size: 18px;">Safe</div>
+                <div class="sensor-unit">status</div>
+                <div class="sensor-badge badge-safe" id="flame-badge-circle"><i class="fas fa-check-circle"></i> Safe</div>
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title"><i class="fas fa-microphone icon-sound"></i> Sound Level</div>
-                    <span class="status-badge badge-safe" id="sound-badge"><i class="fas fa-check-circle"></i> Quiet</span>
-                </div>
-                <div class="value-display"><span id="sound-value">0</span><span class="value-unit"> dB</span></div>
-                <div class="progress-bar"><div class="progress-fill" id="sound-bar" style="width:0%;background:var(--success);"></div></div>
+            <!-- Sound Sensor -->
+            <div class="sensor-circle safe" id="sound-circle">
+                <div class="sensor-ring"></div>
+                <div class="sensor-icon icon-sound"><i class="fas fa-microphone"></i></div>
+                <div class="sensor-title">Sound Level</div>
+                <div class="sensor-value" id="sound-value-circle">0</div>
+                <div class="sensor-unit">dB</div>
+                <div class="sensor-badge badge-safe" id="sound-badge-circle"><i class="fas fa-check-circle"></i> Quiet</div>
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title"><i class="fas fa-lightbulb icon-led"></i> LED Control</div>
-                    <div class="toggle-switch" id="led-toggle" onclick="toggleLED()"></div>
-                </div>
-                <div style="margin-top:16px;color:var(--text-muted);font-size:14px;">
-                    <i class="fas fa-info-circle"></i>
-                    <span id="led-status">LED is currently OFF</span>
-                </div>
+            <!-- LED Control (Circular Button) -->
+            <div class="sensor-circle" id="led-circle" style="cursor: pointer;" onclick="toggleLED()">
+                <div class="sensor-ring" id="led-ring"></div>
+                <button class="led-btn" id="led-btn">
+                    <i class="fas fa-lightbulb"></i>
+                </button>
+                <div class="sensor-title" style="margin-top: 8px;">LED Control</div>
+                <div class="sensor-value" id="led-status-text" style="font-size: 14px; color: var(--text-muted);">OFF</div>
             </div>
         </div>
 
@@ -478,8 +590,9 @@ const TOPIC_ALERTS   = 'smarthome/alerts';
 const TOPIC_CMD_LED  = 'smarthome/cmd/led';
 const TOPIC_STATUS   = 'smarthome/status';
 const TOPIC_LOCK     = 'smarthome/lock';
-const TOPIC_GATE     = 'smarthome/gate';      // ← Gate open/close commands from NRF / ESP32 #2
-const TOPIC_GATE_CMD = 'smarthome/gate/cmd';  // ← Dashboard can publish here if needed
+const TOPIC_GATE     = 'smarthome/gate';
+const TOPIC_GATE_CMD = 'smarthome/gate/cmd';
+const TOPIC_LOCK_CMD = 'smarthome/lock/cmd';  // ← NEW: for toggling lock from dashboard
 
 // Login credentials
 const VALID_USERNAME = "Homies2026";
@@ -490,15 +603,13 @@ const VALID_PASSWORD = "123456";
 // ═══════════════════════════════════════════════════════════
 let isLoggedIn    = false;
 let ledState      = false;
+let lockState     = true;  // true = locked
 let lastAlertState = false;
 let loginAttempts = 0;
 const MAX_ATTEMPTS = 3;
 let mqttClient    = null;
 let lastDataTime  = 0;
 
-// Gate state machine
-// States: 'closed' | 'open' | 'closing'
-let gateState     = 'closed';
 let gateCounter   = parseInt(localStorage.getItem('gateCounter') || '0', 10);
 
 // ═══════════════════════════════════════════════════════════
@@ -547,7 +658,6 @@ function handleLogin() {
         document.getElementById('dashboard').classList.add('active');
         connectMQTT();
         fetchWeatherData();
-        // Restore counter display
         document.getElementById('gate-counter').textContent = gateCounter;
     } else {
         loginAttempts++;
@@ -654,7 +764,6 @@ function handleMQTTMessage(topic, payload) {
     try {
         const data = JSON.parse(payload);
 
-        // ── Sensor data ──
         if (topic === TOPIC_SENSORS) {
             lastDataTime = Date.now();
             document.getElementById('last-update').textContent = 'Last update: ' + new Date().toLocaleTimeString();
@@ -678,64 +787,28 @@ function handleMQTTMessage(topic, payload) {
             lastAlertState = anyDanger;
         }
 
-        // ── Alerts ──
         if (topic === TOPIC_ALERTS && data.alert) {
             showAlert('ALERT!', data.message || 'Danger detected!');
         }
 
-        // ── Lock ──
         if (topic === TOPIC_LOCK && data.event === 'unlocked') {
             showAlert('Door Unlocked', 'Smart lock opened via keypad');
         }
 
-        // ── Status ──
         if (topic === TOPIC_STATUS && data.status === 'online') {
             console.log('[STATUS] ESP32 is online');
         }
 
-        // ══════════════════════════════════════════════════
-        // GATE LOGIC (NEW)
-        //
-        // Flow:
-        //   1. NRF (ESP32 #1) sends  → TOPIC_GATE  { "event": "open" }
-        //      → Dashboard shows OPEN, increments counter
-        //      → Dashboard publishes to TOPIC_GATE_CMD { "cmd": "close" }
-        //        so ESP32 #2 closes the gate physically
-        //   2. ESP32 #2 confirms close → TOPIC_GATE { "event": "closed" }
-        //      → Dashboard shows CLOSED
-        //
-        //   If ESP32 #2 is still closing → TOPIC_GATE { "event": "closing" }
-        //      → Dashboard shows CLOSING... state
-        // ══════════════════════════════════════════════════
         if (topic === TOPIC_GATE) {
             const ev = (data.event || '').toLowerCase();
-
             if (ev === 'open' || ev === 'opened') {
-                // Increment counter
                 gateCounter++;
                 localStorage.setItem('gateCounter', gateCounter);
                 document.getElementById('gate-counter').textContent = gateCounter;
                 document.getElementById('last-open-time').textContent = new Date().toLocaleTimeString();
-
-                // Show OPEN state
-                setGateState('open');
-
-                // Tell ESP32 #2 to close the gate
                 if (mqttClient && mqttClient.connected) {
                     mqttClient.publish(TOPIC_GATE_CMD, JSON.stringify({ cmd: 'close' }));
-                    console.log('[GATE] Sent close command to ESP32 #2');
                 }
-
-                // While waiting for close confirmation, show "closing" after short delay
-                setTimeout(() => {
-                    if (gateState === 'open') setGateState('closing');
-                }, 3000);
-
-            } else if (ev === 'closing') {
-                setGateState('closing');
-
-            } else if (ev === 'closed') {
-                setGateState('closed');
             }
         }
 
@@ -745,45 +818,44 @@ function handleMQTTMessage(topic, payload) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// GATE STATE MACHINE UI (NEW)
+// LOCK TOGGLE (NEW — Tap to toggle)
 // ═══════════════════════════════════════════════════════════
-function setGateState(state) {
-    gateState = state;
-    const body  = document.getElementById('gate-body');
-    const icon  = document.getElementById('gate-icon');
-    const text  = document.getElementById('gate-text');
-    const sub   = document.getElementById('gate-sub');
-    const badge = document.getElementById('gate-badge');
-
-    body.className = 'gate-body';
-
-    if (state === 'open') {
-        body.classList.add('gate-open');
-        icon.style.color  = 'var(--success)';
-        text.textContent  = 'OPEN';
-        sub.textContent   = 'Received OPEN from NRF — sending close to ESP32 #2...';
-        badge.style.background = 'rgba(16,185,129,0.15)';
-        badge.style.color      = 'var(--success)';
-        badge.innerHTML = '<i class="fas fa-door-open"></i> Open';
-
-    } else if (state === 'closing') {
-        body.classList.add('gate-closing');
-        icon.style.color  = 'var(--warning)';
-        text.textContent  = 'CLOSING...';
-        sub.textContent   = 'ESP32 #2 is closing the gate — waiting for confirmation...';
-        badge.style.background = 'rgba(245,158,11,0.15)';
-        badge.style.color      = 'var(--warning)';
-        badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Closing';
-
-    } else { // closed
-        body.classList.add('gate-closed');
-        icon.style.color  = 'var(--danger)';
-        text.textContent  = 'CLOSED';
-        sub.textContent   = 'Gate secured — waiting for next NRF command';
-        badge.style.background = 'rgba(239,68,68,0.15)';
-        badge.style.color      = 'var(--danger)';
-        badge.innerHTML = '<i class="fas fa-times-circle"></i> Closed';
+window.toggleLock = function() {
+    lockState = !lockState;
+    updateLockUI(lockState);
+    // Publish lock command to MQTT
+    if (mqttClient && mqttClient.connected) {
+        mqttClient.publish(TOPIC_LOCK_CMD, JSON.stringify({ cmd: lockState ? 'lock' : 'unlock' }));
+        console.log('[LOCK] Sent command:', lockState ? 'lock' : 'unlock');
     }
+};
+
+function updateLockUI(isLocked) {
+    const btn = document.getElementById('lock-circle-btn');
+    const icon = document.getElementById('lock-circle-icon');
+    const text = document.getElementById('lock-status-text');
+    const sub = document.getElementById('lock-status-sub');
+
+    if (isLocked) {
+        btn.classList.remove('unlocked');
+        btn.classList.add('locked');
+        icon.className = 'fas fa-lock';
+        text.textContent = 'LOCKED';
+        text.style.color = 'var(--danger)';
+        sub.textContent = 'Tap to unlock';
+    } else {
+        btn.classList.remove('locked');
+        btn.classList.add('unlocked');
+        icon.className = 'fas fa-lock-open';
+        text.textContent = 'UNLOCKED';
+        text.style.color = 'var(--success)';
+        sub.textContent = 'Tap to lock';
+    }
+}
+
+function updateLockStatus(isUnlocked) {
+    lockState = !isUnlocked;
+    updateLockUI(lockState);
 }
 
 window.resetGateCounter = function() {
@@ -794,98 +866,94 @@ window.resetGateCounter = function() {
 };
 
 // ═══════════════════════════════════════════════════════════
-// SENSOR UI UPDATES
+// CIRCULAR SENSOR UI UPDATES
 // ═══════════════════════════════════════════════════════════
 function updateGasSensor(value, detected) {
-    document.getElementById('gas-value').textContent = value;
-    const pct = Math.min((value / 5000) * 100, 100);
-    const bar = document.getElementById('gas-bar');
-    const badge = document.getElementById('gas-badge');
-    bar.style.width = pct + '%';
+    document.getElementById('gas-value-circle').textContent = value;
+    const circle = document.getElementById('gas-circle');
+    const badge = document.getElementById('gas-badge-circle');
+    circle.classList.remove('safe', 'danger');
     if (detected) {
-        bar.style.background = 'var(--danger)';
-        badge.className = 'status-badge badge-danger';
-        badge.innerHTML = '<i class="fas fa-triangle-exclamation"></i> GAS LEAK!';
+        circle.classList.add('danger');
+        badge.className = 'sensor-badge badge-danger';
+        badge.innerHTML = '<i class="fas fa-triangle-exclamation"></i> GAS!';
     } else {
-        bar.style.background = 'var(--success)';
-        badge.className = 'status-badge badge-safe';
+        circle.classList.add('safe');
+        badge.className = 'sensor-badge badge-safe';
         badge.innerHTML = '<i class="fas fa-check-circle"></i> Safe';
     }
 }
 function updateRainSensor(value, detected) {
-    document.getElementById('rain-value').textContent = value;
-    const pct = Math.min((value / 4000) * 100, 100);
-    const bar = document.getElementById('rain-bar');
-    const badge = document.getElementById('rain-badge');
-    bar.style.width = pct + '%';
+    document.getElementById('rain-value-circle').textContent = value;
+    const circle = document.getElementById('rain-circle');
+    const badge = document.getElementById('rain-badge-circle');
+    circle.classList.remove('safe', 'danger');
     if (detected) {
-        badge.className = 'status-badge badge-danger';
-        badge.innerHTML = '<i class="fas fa-cloud-rain"></i> RAINING!';
+        circle.classList.add('danger');
+        badge.className = 'sensor-badge badge-danger';
+        badge.innerHTML = '<i class="fas fa-cloud-rain"></i> RAIN!';
     } else {
-        badge.className = 'status-badge badge-safe';
+        circle.classList.add('safe');
+        badge.className = 'sensor-badge badge-safe';
         badge.innerHTML = '<i class="fas fa-check-circle"></i> Dry';
     }
 }
 function updateFlameSensor(detected) {
-    const badge   = document.getElementById('flame-badge');
-    const display = document.getElementById('flame-display');
+    const circle = document.getElementById('flame-circle');
+    const badge = document.getElementById('flame-badge-circle');
+    const value = document.getElementById('flame-value-circle');
+    circle.classList.remove('safe', 'danger');
     if (detected) {
-        badge.className = 'status-badge badge-danger';
+        circle.classList.add('danger');
+        badge.className = 'sensor-badge badge-danger';
         badge.innerHTML = '<i class="fas fa-fire"></i> FIRE!';
-        display.innerHTML = '<i class="fas fa-fire" style="color:var(--danger);animation:pulse 0.5s infinite;"></i><span style="font-size:16px;margin-left:8px;color:var(--danger);font-weight:700;">FIRE ALERT!</span>';
+        value.textContent = 'FIRE!';
+        value.style.color = 'var(--danger)';
     } else {
-        badge.className = 'status-badge badge-safe';
+        circle.classList.add('safe');
+        badge.className = 'sensor-badge badge-safe';
         badge.innerHTML = '<i class="fas fa-check-circle"></i> Safe';
-        display.innerHTML = '<i class="fas fa-shield-halved" style="color:var(--success);"></i><span style="font-size:16px;margin-left:8px;color:var(--text-muted);">Safe</span>';
+        value.textContent = 'Safe';
+        value.style.color = 'var(--success)';
     }
 }
 function updateSoundSensor(value, detected) {
-    document.getElementById('sound-value').textContent = value;
-    const pct = Math.min((value / 2000) * 100, 100);
-    const bar = document.getElementById('sound-bar');
-    const badge = document.getElementById('sound-badge');
-    bar.style.width = pct + '%';
+    document.getElementById('sound-value-circle').textContent = value;
+    const circle = document.getElementById('sound-circle');
+    const badge = document.getElementById('sound-badge-circle');
+    circle.classList.remove('safe', 'danger', 'warning');
     if (detected) {
-        bar.style.background = 'var(--warning)';
-        badge.className = 'status-badge badge-danger';
+        circle.classList.add('warning');
+        badge.className = 'sensor-badge badge-danger';
         badge.innerHTML = '<i class="fas fa-volume-high"></i> LOUD!';
     } else {
-        bar.style.background = 'var(--success)';
-        badge.className = 'status-badge badge-safe';
+        circle.classList.add('safe');
+        badge.className = 'sensor-badge badge-safe';
         badge.innerHTML = '<i class="fas fa-check-circle"></i> Quiet';
-    }
-}
-function updateLockStatus(isUnlocked) {
-    const statusDiv = document.getElementById('lock-status');
-    const icon = document.getElementById('lock-icon');
-    const text = document.getElementById('lock-text');
-    if (isUnlocked) {
-        statusDiv.classList.remove('locked');
-        icon.className = 'fas fa-lock-open';
-        icon.style.color = 'var(--success)';
-        text.textContent = 'UNLOCKED — Welcome Home!';
-    } else {
-        statusDiv.classList.add('locked');
-        icon.className = 'fas fa-lock';
-        icon.style.color = 'var(--danger)';
-        text.textContent = 'LOCKED — Secure';
     }
 }
 
 // ═══════════════════════════════════════════════════════════
-// LED CONTROL
+// LED CONTROL (Circular Button)
 // ═══════════════════════════════════════════════════════════
 window.toggleLED = function() {
     ledState = !ledState;
-    const toggle = document.getElementById('led-toggle');
-    const status = document.getElementById('led-status');
+    const btn = document.getElementById('led-btn');
+    const ring = document.getElementById('led-ring');
+    const status = document.getElementById('led-status-text');
+
     if (ledState) {
-        toggle.classList.add('active');
-        status.innerHTML = '<i class="fas fa-check-circle" style="color:var(--primary);"></i> LED is currently ON';
+        btn.classList.add('on');
+        ring.style.borderColor = 'var(--primary)';
+        status.textContent = 'ON';
+        status.style.color = 'var(--primary)';
     } else {
-        toggle.classList.remove('active');
-        status.innerHTML = '<i class="fas fa-info-circle"></i> LED is currently OFF';
+        btn.classList.remove('on');
+        ring.style.borderColor = 'transparent';
+        status.textContent = 'OFF';
+        status.style.color = 'var(--text-muted)';
     }
+
     if (mqttClient && mqttClient.connected) {
         mqttClient.publish(TOPIC_CMD_LED, ledState ? 'ON' : 'OFF');
     }
@@ -904,11 +972,10 @@ window.closeAlert = function() {
 };
 
 // ═══════════════════════════════════════════════════════════
-// WEATHER DATA — Temperature + Humidity + Wind Speed (NEW)
+// WEATHER DATA
 // ═══════════════════════════════════════════════════════════
 async function fetchWeatherData() {
     try {
-        // Using Giza, Egypt coordinates (detected from your location)
         const lat = 30.0131;
         const lon = 31.2089;
         const res = await fetch(
@@ -927,10 +994,8 @@ async function fetchWeatherData() {
     }
 }
 
-// Refresh weather every 5 minutes
 setInterval(fetchWeatherData, 300000);
 
-// Check for ESP32 data timeout
 setInterval(() => {
     if (isLoggedIn && Date.now() - lastDataTime > 10000 && lastDataTime > 0) {
         document.getElementById('last-update').textContent = 'No data from ESP32...';
