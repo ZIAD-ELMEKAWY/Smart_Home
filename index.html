@@ -316,7 +316,7 @@
             color: var(--text-muted);
         }
 
-        /* ── GATE COUNTER CARD (ENHANCED) ── */
+        /* ── GATE COUNTER CARD ── */
         .gate-counter-card {
             display: flex;
             flex-direction: column;
@@ -517,7 +517,7 @@
                 </div>
             </div>
 
-            <!-- Gate Opens Counter Card (ENHANCED) -->
+            <!-- Gate Opens Counter Card -->
             <div class="card gate-counter-card">
                 <div class="card-title" style="margin-bottom: 20px;"><i class="fas fa-hashtag icon-count"></i> Gate Opens Today</div>
                 <div class="gate-counter-circle" id="gate-counter-circle">
@@ -537,7 +537,6 @@
 
         <!-- Circular Sensors Row -->
         <div class="sensor-grid">
-            <!-- Gas Sensor -->
             <div class="sensor-circle safe" id="gas-circle">
                 <div class="sensor-ring"></div>
                 <div class="sensor-icon icon-gas"><i class="fas fa-wind"></i></div>
@@ -547,7 +546,6 @@
                 <div class="sensor-badge badge-safe" id="gas-badge-circle"><i class="fas fa-check-circle"></i> Safe</div>
             </div>
 
-            <!-- Rain Sensor -->
             <div class="sensor-circle safe" id="rain-circle">
                 <div class="sensor-ring"></div>
                 <div class="sensor-icon icon-rain"><i class="fas fa-cloud-rain"></i></div>
@@ -557,7 +555,6 @@
                 <div class="sensor-badge badge-safe" id="rain-badge-circle"><i class="fas fa-check-circle"></i> Dry</div>
             </div>
 
-            <!-- Flame Sensor -->
             <div class="sensor-circle safe" id="flame-circle">
                 <div class="sensor-ring"></div>
                 <div class="sensor-icon icon-flame"><i class="fas fa-fire"></i></div>
@@ -567,7 +564,6 @@
                 <div class="sensor-badge badge-safe" id="flame-badge-circle"><i class="fas fa-check-circle"></i> Safe</div>
             </div>
 
-            <!-- Sound Sensor -->
             <div class="sensor-circle safe" id="sound-circle">
                 <div class="sensor-ring"></div>
                 <div class="sensor-icon icon-sound"><i class="fas fa-microphone"></i></div>
@@ -577,7 +573,6 @@
                 <div class="sensor-badge badge-safe" id="sound-badge-circle"><i class="fas fa-check-circle"></i> Quiet</div>
             </div>
 
-            <!-- LED Control (Circular Button) -->
             <div class="sensor-circle" id="led-circle" style="cursor: pointer;" onclick="toggleLED()">
                 <div class="sensor-ring" id="led-ring"></div>
                 <button class="led-btn" id="led-btn" onclick="event.stopPropagation(); toggleLED();">
@@ -591,8 +586,8 @@
         <div style="text-align:center;color:#475569;font-size:12px;margin-top:20px;">
             Connected via HiveMQ Cloud &bull; Real-time MQTT &bull; <span id="last-update">Waiting for data...</span>
         </div>
-    </div><!-- /container -->
-</div><!-- /dashboard -->
+    </div>
+</div>
 
 <script type="module">
 import mqtt from 'https://unpkg.com/mqtt/dist/mqtt.esm.js';
@@ -613,10 +608,9 @@ const TOPIC_STATUS       = 'smarthome/status';
 const TOPIC_LOCK         = 'smarthome/lock';
 const TOPIC_GATE         = 'smarthome/gate';
 const TOPIC_GATE_CMD     = 'smarthome/gate/cmd';
-const TOPIC_GATE_COUNTER = 'smarthome/gate/counter';  // ← NEW: Counter topic
+const TOPIC_GATE_COUNTER = 'smarthome/gate/counter';
 const TOPIC_LOCK_CMD     = 'smarthome/lock/cmd';
 
-// Login credentials
 const VALID_USERNAME = "Homies2026";
 const VALID_PASSWORD = "123456";
 
@@ -632,7 +626,6 @@ const MAX_ATTEMPTS  = 3;
 let mqttClient      = null;
 let lastDataTime    = 0;
 
-// Gate counter — synced from ESP32 via MQTT
 let gateCounter     = 0;
 let lastGateOpenTime = null;
 
@@ -751,7 +744,6 @@ function connectMQTT() {
     mqttClient.on('connect', () => {
         updateMQTTStatus('connected', 'Connected to HiveMQ Cloud');
         updateConnectionStatus(true);
-        // Subscribe to all relevant topics including new counter topic
         [TOPIC_SENSORS, TOPIC_ALERTS, TOPIC_STATUS, TOPIC_LOCK, TOPIC_GATE, TOPIC_GATE_COUNTER].forEach(t => {
             mqttClient.subscribe(t);
         });
@@ -788,7 +780,6 @@ function handleMQTTMessage(topic, payload) {
     try {
         const data = JSON.parse(payload);
 
-        // ── Sensor data ──
         if (topic === TOPIC_SENSORS) {
             lastDataTime = Date.now();
             document.getElementById('last-update').textContent = 'Last update: ' + new Date().toLocaleTimeString();
@@ -804,7 +795,6 @@ function handleMQTTMessage(topic, payload) {
                 updateLockUI(lockState);
             }
 
-            // Update gate count from sensor payload if present
             if (data.gateCount !== undefined) {
                 updateGateCounterDisplay(data.gateCount);
             }
@@ -821,41 +811,40 @@ function handleMQTTMessage(topic, payload) {
             lastAlertState = anyDanger;
         }
 
-        // ── Alerts ──
         if (topic === TOPIC_ALERTS && data.alert) {
             showAlert('ALERT!', data.message || 'Danger detected!');
         }
 
-        // ── Lock events ──
         if (topic === TOPIC_LOCK && data.event === 'unlocked') {
             showAlert('Door Unlocked', 'Smart lock opened via ' + (data.source || 'keypad'));
         }
 
-        // ── Status ──
         if (topic === TOPIC_STATUS && data.status === 'online') {
             console.log('[STATUS] ESP32 is online');
             if (data.gateCount !== undefined) {
                 updateGateCounterDisplay(data.gateCount);
             }
+            if (data.ack === 'counter_reset') {
+                console.log('[GATE] ESP32 confirmed counter reset');
+                updateGateCounterDisplay(0);
+            }
         }
 
-        // ── Gate events ──
         if (topic === TOPIC_GATE) {
             const ev = (data.event || '').toLowerCase();
             console.log('[GATE] Event:', ev, '| Count:', data.count);
 
             if (ev === 'open' || ev === 'opened') {
                 lastGateOpenTime = new Date();
-                updateGateCounterDisplay(data.count || gateCounter + 1);
+                if (data.count !== undefined) {
+                    updateGateCounterDisplay(data.count);
+                }
                 if (mqttClient && mqttClient.connected) {
                     mqttClient.publish(TOPIC_GATE_CMD, JSON.stringify({ cmd: 'close' }));
                 }
             }
         }
 
-        // ══════════════════════════════════════════════════
-        // NEW: Gate Counter Topic — Direct counter updates
-        // ══════════════════════════════════════════════════
         if (topic === TOPIC_GATE_COUNTER) {
             const newCount = parseInt(data.count, 10);
             if (!isNaN(newCount)) {
@@ -873,7 +862,7 @@ function handleMQTTMessage(topic, payload) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// GATE COUNTER DISPLAY UPDATE (NEW)
+// GATE COUNTER DISPLAY UPDATE
 // ═══════════════════════════════════════════════════════════
 function updateGateCounterDisplay(count) {
     if (typeof count === 'number' && count >= 0) {
@@ -885,7 +874,6 @@ function updateGateCounterDisplay(count) {
     const timeEl = document.getElementById('last-open-time');
 
     if (counterEl) {
-        // Animate if value changed
         const oldVal = parseInt(counterEl.textContent, 10);
         counterEl.textContent = gateCounter;
         if (oldVal !== gateCounter && circleEl) {
@@ -898,6 +886,30 @@ function updateGateCounterDisplay(count) {
         timeEl.textContent = lastGateOpenTime.toLocaleTimeString();
     }
 }
+
+// ═══════════════════════════════════════════════════════════
+// RESET GATE COUNTER — Sends command to ESP32 via MQTT
+// ═══════════════════════════════════════════════════════════
+window.resetGateCounter = function() {
+    console.log('[GATE] Sending reset command to ESP32...');
+
+    // Send reset command to ESP32 via MQTT
+    if (mqttClient && mqttClient.connected) {
+        mqttClient.publish(TOPIC_GATE_COUNTER, JSON.stringify({ cmd: 'reset' }));
+        console.log('[GATE] Published reset command to', TOPIC_GATE_COUNTER);
+    } else {
+        console.warn('[GATE] MQTT not connected, reset command not sent');
+    }
+
+    // Reset locally for immediate feedback
+    gateCounter = 0;
+    lastGateOpenTime = null;
+    const el = document.getElementById('gate-counter');
+    if (el) el.textContent = '0';
+    const timeEl = document.getElementById('last-open-time');
+    if (timeEl) timeEl.textContent = '—';
+    console.log('[GATE] Counter reset locally');
+};
 
 // ═══════════════════════════════════════════════════════════
 // LOCK TOGGLE
@@ -940,22 +952,6 @@ function updateLockUI(isLocked) {
         sub.textContent = 'Tap to lock';
     }
 }
-
-window.resetGateCounter = function() {
-    // Send reset command to ESP32
-    if (mqttClient && mqttClient.connected) {
-        mqttClient.publish(TOPIC_GATE_COUNTER, JSON.stringify({ cmd: 'reset' }));
-        console.log('[GATE] Sent reset command to ESP32');
-    }
-    // Also reset locally
-    gateCounter = 0;
-    lastGateOpenTime = null;
-    const el = document.getElementById('gate-counter');
-    if (el) el.textContent = '0';
-    const timeEl = document.getElementById('last-open-time');
-    if (timeEl) timeEl.textContent = '—';
-    console.log('[GATE] Counter reset');
-};
 
 // ═══════════════════════════════════════════════════════════
 // CIRCULAR SENSOR UI UPDATES
