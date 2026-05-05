@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Home Control — HiveMQ Cloud</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- MQTT.js library -->
-    <script src="https://unpkg.com/mqtt/dist/mqtt.esm.js" type="module"></script>
     <style>
         :root {
             --primary: #6366f1;
@@ -24,108 +22,156 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-        #splash { position: fixed; inset: 0; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        /* ── SPLASH ── */
+        #splash {
+            position: fixed; inset: 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 9999; transition: opacity 0.8s, visibility 0.8s; }
-        #splash.hidden { opacity: 0; visibility: hidden; }
+            z-index: 9999; transition: opacity 0.8s, visibility 0.8s;
+        }
+        #splash.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
         .logo-container { position: relative; width: 120px; height: 120px; margin-bottom: 24px; }
-        .logo-ring { position: absolute; inset: 0; border: 3px solid transparent;
-            border-top-color: var(--primary); border-radius: 50%; animation: spin 2s linear infinite; }
-        .logo-ring:nth-child(2) { inset: 10px; border-top-color: var(--info);
-            animation-duration: 1.5s; animation-direction: reverse; }
-        .logo-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-            font-size: 48px; color: var(--primary); }
+        .logo-ring {
+            position: absolute; inset: 0; border: 3px solid transparent;
+            border-top-color: var(--primary); border-radius: 50%; animation: spin 2s linear infinite;
+        }
+        .logo-ring:nth-child(2) { inset: 10px; border-top-color: var(--info); animation-duration: 1.5s; animation-direction: reverse; }
+        .logo-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 48px; color: var(--primary); }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .splash-text { font-size: 28px; font-weight: 700; letter-spacing: 2px;
+        .splash-text {
+            font-family: 'Rajdhani', sans-serif; font-size: 32px; font-weight: 700; letter-spacing: 4px;
             background: linear-gradient(90deg, var(--primary), var(--info));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
         .splash-sub { margin-top: 8px; color: var(--text-muted); font-size: 14px; }
 
-        #login-screen { display: none; min-height: 100vh; align-items: center; justify-content: center;
-            padding: 20px; background: radial-gradient(ellipse at top, #1e1b4b 0%, var(--bg) 70%); }
+        /* ── LOGIN ── */
+        #login-screen { display: none; min-height: 100vh; align-items: center; justify-content: center; padding: 20px; background: radial-gradient(ellipse at top, #1e1b4b 0%, var(--bg) 70%); }
         #login-screen.active { display: flex; }
-        .login-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px;
-            padding: 40px; width: 100%; max-width: 420px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-            animation: slideUp 0.6s ease; }
+        .login-card {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px;
+            padding: 40px; width: 100%; max-width: 420px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); animation: slideUp 0.6s ease;
+        }
         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         .login-header { text-align: center; margin-bottom: 32px; }
         .login-header i { font-size: 48px; color: var(--primary); margin-bottom: 16px; }
-        .login-header h2 { font-size: 24px; margin-bottom: 8px; }
+        .login-header h2 { font-family: 'Rajdhani', sans-serif; font-size: 28px; font-weight: 700; margin-bottom: 8px; }
         .login-header p { color: var(--text-muted); font-size: 14px; }
         .input-group { margin-bottom: 20px; position: relative; }
         .input-group label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 500; color: var(--text-muted); }
-        .input-group input { width: 100%; padding: 14px 16px 14px 44px; background: #0f172a;
-            border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 15px; transition: all 0.3s; }
+        .input-wrapper { position: relative; }
+        .input-group input {
+            width: 100%; padding: 14px 44px; background: #0f172a;
+            border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 15px; transition: all 0.3s;
+        }
         .input-group input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
-        .input-group i { position: absolute; left: 16px; bottom: 15px; color: var(--text-muted); font-size: 16px; }
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600;
-            cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .input-icon-left { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 16px; pointer-events: none; }
+        .toggle-pw-btn {
+            position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; color: var(--text-muted); cursor: pointer;
+            font-size: 15px; padding: 4px; transition: color 0.2s;
+        }
+        .toggle-pw-btn:hover { color: var(--primary); }
+        .btn {
+            width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600;
+            cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
         .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; }
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(99,102,241,0.4); }
         .btn:active { transform: scale(0.98); }
-        .error-msg { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+        .error-msg {
+            background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
             color: var(--danger); padding: 12px; border-radius: 10px; margin-bottom: 20px;
-            font-size: 14px; display: none; align-items: center; gap: 8px; }
+            font-size: 14px; display: none; align-items: center; gap: 8px;
+        }
         .error-msg.show { display: flex; animation: shake 0.5s ease; }
         @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-10px)} 75%{transform:translateX(10px)} }
 
+        /* ── DASHBOARD ── */
         #dashboard { display: none; min-height: 100vh; }
         #dashboard.active { display: block; }
-        .top-bar { background: var(--card-bg); border-bottom: 1px solid var(--border);
+        .top-bar {
+            background: var(--card-bg); border-bottom: 1px solid var(--border);
             padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;
-            position: sticky; top: 0; z-index: 100; }
+            position: sticky; top: 0; z-index: 100;
+        }
         .brand { display: flex; align-items: center; gap: 12px; }
         .brand i { font-size: 24px; color: var(--primary); }
-        .brand h1 { font-size: 20px; font-weight: 700; }
+        .brand h1 { font-family: 'Rajdhani', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: 1px; }
         .status-bar { display: flex; align-items: center; gap: 16px; }
         .status-indicator { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); }
         .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
         .status-dot.offline { background: var(--danger); animation: none; }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-        .logout-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted);
-            padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.3s; }
+        .logout-btn {
+            background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+            padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.3s;
+        }
         .logout-btn:hover { border-color: var(--danger); color: var(--danger); }
         .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 24px; }
-        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
-            padding: 24px; transition: all 0.3s; position: relative; overflow: hidden; }
+        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+        .card {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
+            padding: 24px; transition: all 0.3s; position: relative; overflow: hidden;
+        }
         .card:hover { border-color: var(--primary); transform: translateY(-2px); }
-        .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-            background: linear-gradient(90deg, var(--primary), var(--info)); opacity: 0; transition: opacity 0.3s; }
+        .card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--info)); opacity: 0; transition: opacity 0.3s;
+        }
         .card:hover::before { opacity: 1; }
         .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
         .card-title { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 600; }
-        .card-title i { width: 36px; height: 36px; border-radius: 10px; display: flex;
-            align-items: center; justify-content: center; font-size: 16px; }
-        .icon-gas { background: rgba(239,68,68,0.15); color: var(--danger); }
-        .icon-rain { background: rgba(59,130,246,0.15); color: var(--info); }
-        .icon-flame { background: rgba(245,158,11,0.15); color: var(--warning); }
-        .icon-sound { background: rgba(16,185,129,0.15); color: var(--success); }
-        .icon-led { background: rgba(99,102,241,0.15); color: var(--primary); }
-        .icon-temp { background: rgba(236,72,153,0.15); color: #ec4899; }
-        .icon-lock { background: rgba(16,185,129,0.15); color: var(--success); }
-        .value-display { font-size: 32px; font-weight: 700; margin: 8px 0; }
+        .card-title i {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; font-size: 16px;
+        }
+        .icon-gas   { background: rgba(239,68,68,0.15);   color: var(--danger);  }
+        .icon-rain  { background: rgba(59,130,246,0.15);   color: var(--info);    }
+        .icon-flame { background: rgba(245,158,11,0.15);   color: var(--warning); }
+        .icon-sound { background: rgba(16,185,129,0.15);   color: var(--success); }
+        .icon-led   { background: rgba(99,102,241,0.15);   color: var(--primary); }
+        .icon-temp  { background: rgba(236,72,153,0.15);   color: #ec4899;        }
+        .icon-lock  { background: rgba(16,185,129,0.15);   color: var(--success); }
+        .icon-gate  { background: rgba(245,158,11,0.15);   color: var(--warning); }
+        .icon-wind  { background: rgba(59,130,246,0.15);   color: var(--info);    }
+        .icon-count { background: rgba(99,102,241,0.15);   color: var(--primary); }
+
+        .value-display { font-size: 32px; font-weight: 700; margin: 8px 0; font-family: 'Rajdhani', sans-serif; }
         .value-unit { font-size: 14px; color: var(--text-muted); font-weight: 400; }
         .progress-bar { width: 100%; height: 8px; background: #0f172a; border-radius: 4px; overflow: hidden; margin-top: 12px; }
         .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease, background-color 0.5s ease; }
-        .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
-            border-radius: 20px; font-size: 13px; font-weight: 600; margin-top: 8px; }
-        .badge-safe { background: rgba(16,185,129,0.15); color: var(--success); }
-        .badge-danger { background: rgba(239,68,68,0.15); color: var(--danger); animation: dangerPulse 1s infinite; }
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
+            border-radius: 20px; font-size: 13px; font-weight: 600; margin-top: 8px;
+        }
+        .badge-safe   { background: rgba(16,185,129,0.15); color: var(--success); }
+        .badge-danger { background: rgba(239,68,68,0.15);  color: var(--danger);  animation: dangerPulse 1s infinite; }
         @keyframes dangerPulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
-        .toggle-switch { position: relative; width: 56px; height: 28px; background: #334155;
-            border-radius: 14px; cursor: pointer; transition: background 0.3s; }
+
+        .toggle-switch {
+            position: relative; width: 56px; height: 28px; background: #334155;
+            border-radius: 14px; cursor: pointer; transition: background 0.3s;
+        }
         .toggle-switch.active { background: var(--primary); }
-        .toggle-switch::after { content: ''; position: absolute; width: 22px; height: 22px;
+        .toggle-switch::after {
+            content: ''; position: absolute; width: 22px; height: 22px;
             background: white; border-radius: 50%; top: 3px; left: 3px; transition: transform 0.3s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
         .toggle-switch.active::after { transform: translateX(28px); }
 
-        .alert-banner { background: linear-gradient(90deg, rgba(239,68,68,0.2), rgba(245,158,11,0.2));
+        /* ── ALERT BANNER ── */
+        .alert-banner {
+            background: linear-gradient(90deg, rgba(239,68,68,0.2), rgba(245,158,11,0.2));
             border: 1px solid rgba(239,68,68,0.4); border-radius: 12px; padding: 16px 20px;
-            margin-bottom: 24px; display: none; align-items: center; gap: 12px; animation: slideDown 0.4s ease; }
+            margin-bottom: 24px; display: none; align-items: center; gap: 12px; animation: slideDown 0.4s ease;
+        }
         .alert-banner.show { display: flex; }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         .alert-icon { font-size: 24px; color: var(--danger); animation: bellRing 0.5s ease infinite alternate; }
@@ -136,23 +182,51 @@
         .alert-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px; padding: 4px; }
         .alert-close:hover { color: var(--text); }
 
-        .lock-status { display: flex; align-items: center; gap: 16px; padding: 16px;
-            background: rgba(16,185,129,0.1); border-radius: 12px; margin-top: 12px; }
+        /* ── LOCK / GATE ── */
+        .lock-status {
+            display: flex; align-items: center; gap: 16px; padding: 16px;
+            background: rgba(16,185,129,0.1); border-radius: 12px; margin-top: 12px; transition: background 0.4s;
+        }
         .lock-status.locked { background: rgba(239,68,68,0.1); }
-        .lock-status i { font-size: 32px; color: var(--success); }
+        .lock-status i { font-size: 32px; color: var(--success); transition: color 0.4s; }
         .lock-status.locked i { color: var(--danger); }
         .lock-info h4 { font-size: 14px; color: var(--text-muted); margin-bottom: 2px; }
         .lock-info p { font-size: 18px; font-weight: 700; }
 
-        .mqtt-panel { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
-            padding: 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; }
-        .mqtt-status-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--danger); }
+        /* ── GATE CARD ── */
+        .gate-body {
+            display: flex; align-items: center; gap: 16px; padding: 16px;
+            border-radius: 12px; margin-top: 12px; transition: background 0.4s;
+        }
+        .gate-body.gate-open    { background: rgba(16,185,129,0.12); }
+        .gate-body.gate-closed  { background: rgba(239,68,68,0.10); }
+        .gate-body.gate-closing { background: rgba(245,158,11,0.12); }
+        .gate-big-icon { font-size: 36px; transition: color 0.4s; }
+        .gate-info h4 { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
+        .gate-info p  { font-size: 18px; font-weight: 700; }
+        .gate-sub     { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+        /* ── COUNTER CARD ── */
+        .counter-number {
+            font-family: 'Rajdhani', sans-serif; font-size: 56px; font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--info));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            line-height: 1; margin: 8px 0;
+        }
+        .counter-label { font-size: 13px; color: var(--text-muted); }
+
+        /* ── MQTT PANEL ── */
+        .mqtt-panel {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+            padding: 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px;
+        }
+        .mqtt-status-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--danger); flex-shrink: 0; }
         .mqtt-status-dot.connected { background: var(--success); animation: pulse 2s infinite; }
         .mqtt-info { flex: 1; }
         .mqtt-info h4 { font-size: 14px; margin-bottom: 2px; }
         .mqtt-info p { font-size: 12px; color: var(--text-muted); }
 
-@media (max-width: 768px) {
+        @media (max-width: 768px) {
             .grid { grid-template-columns: 1fr; }
             .top-bar { padding: 12px 16px; }
             .brand h1 { font-size: 16px; }
@@ -166,598 +240,704 @@
 </head>
 <body>
 
-    <!-- SPLASH SCREEN -->
-    <div id="splash">
-        <div class="logo-container">
-            <div class="logo-ring"></div>
-            <div class="logo-ring"></div>
-            <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
-        </div>
-        <div class="splash-text">SMART HOME</div>
-        <div class="splash-sub">HiveMQ Cloud Connected</div>
+<!-- SPLASH -->
+<div id="splash">
+    <div class="logo-container">
+        <div class="logo-ring"></div>
+        <div class="logo-ring"></div>
+        <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
     </div>
+    <div class="splash-text">SMART HOME</div>
+    <div class="splash-sub">HiveMQ Cloud Connected</div>
+</div>
 
-    <!-- LOGIN SCREEN -->
-    <div id="login-screen">
-        <div class="login-card">
-            <div class="login-header">
-                <i class="fas fa-shield-halved"></i>
-                <h2>Welcome Back</h2>
-                <p>Enter credentials to access your smart home</p>
-            </div>
-            <div class="error-msg" id="error-msg">
-                <i class="fas fa-circle-exclamation"></i>
-                <span id="error-text">Invalid username or password</span>
-            </div>
-            <div class="input-group">
-                <label>Username</label>
-                <i class="fas fa-user"></i>
+<!-- LOGIN -->
+<div id="login-screen">
+    <div class="login-card">
+        <div class="login-header">
+            <i class="fas fa-shield-halved"></i>
+            <h2>Welcome Back</h2>
+            <p>Enter credentials to access your smart home</p>
+        </div>
+        <div class="error-msg" id="error-msg">
+            <i class="fas fa-circle-exclamation"></i>
+            <span id="error-text">Invalid username or password</span>
+        </div>
+        <div class="input-group">
+            <label>Username</label>
+            <div class="input-wrapper">
+                <i class="fas fa-user input-icon-left"></i>
                 <input type="text" id="username" placeholder="Enter username" autocomplete="off">
             </div>
-            <div class="input-group">
-                <label>Password</label>
-                <i class="fas fa-lock"></i>
+        </div>
+        <div class="input-group">
+            <label>Password</label>
+            <div class="input-wrapper">
+                <i class="fas fa-lock input-icon-left"></i>
                 <input type="password" id="password" placeholder="Enter password">
+                <button class="toggle-pw-btn" id="toggle-pw-btn" type="button" onclick="togglePasswordVisibility()" title="Show / hide password">
+                    <i class="fas fa-eye" id="pw-eye-icon"></i>
+                </button>
             </div>
-            <button class="btn btn-primary" onclick="handleLogin()">
-                <i class="fas fa-right-to-bracket"></i> Sign In
+        </div>
+        <button class="btn btn-primary" id="login-btn" onclick="handleLogin()">
+            <i class="fas fa-right-to-bracket"></i> Sign In
+        </button>
+    </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+    <div class="top-bar">
+        <div class="brand">
+            <i class="fas fa-shield-halved"></i>
+            <h1>Smart Home Control</h1>
+        </div>
+        <div class="status-bar">
+            <div class="status-indicator">
+                <div class="status-dot offline" id="conn-dot"></div>
+                <span id="conn-status">Connecting...</span>
+            </div>
+            <button class="logout-btn" onclick="handleLogout()">
+                <i class="fas fa-right-from-bracket"></i> Logout
             </button>
         </div>
     </div>
 
-    <!-- DASHBOARD -->
-    <div id="dashboard">
-        <div class="top-bar">
-            <div class="brand">
-                <i class="fas fa-shield-halved"></i>
-                <h1>Smart Home Control</h1>
-            </div>
-            <div class="status-bar">
-                <div class="status-indicator">
-                    <div class="status-dot" id="conn-dot"></div>
-                    <span id="conn-status">Connecting...</span>
-                </div>
-                <button class="logout-btn" onclick="handleLogout()">
-                    <i class="fas fa-right-from-bracket"></i> Logout
-                </button>
+    <div class="container">
+
+        <!-- MQTT Panel -->
+        <div class="mqtt-panel">
+            <div class="mqtt-status-dot" id="mqtt-dot"></div>
+            <div class="mqtt-info">
+                <h4>MQTT Connection</h4>
+                <p id="mqtt-text">Initializing...</p>
             </div>
         </div>
 
-        <div class="container">
-<!-- MQTT Connection Panel -->
-            <div class="mqtt-panel" id="mqtt-panel">
-                <div class="mqtt-status-dot" id="mqtt-dot"></div>
-                <div class="mqtt-info">
-                    <h4>MQTT Connection</h4>
-                    <p id="mqtt-text">Initializing...</p>
-                </div>
+        <!-- Alert Banner -->
+        <div class="alert-banner" id="alert-banner">
+            <i class="fas fa-bell alert-icon"></i>
+            <div class="alert-content">
+                <div class="alert-title" id="alert-title">Alert!</div>
+                <div class="alert-text" id="alert-text">Danger detected in the system</div>
             </div>
+            <button class="alert-close" onclick="closeAlert()"><i class="fas fa-xmark"></i></button>
+        </div>
 
-            <!-- Alert Banner -->
-            <div class="alert-banner" id="alert-banner">
-                <i class="fas fa-bell alert-icon"></i>
-                <div class="alert-content">
-                    <div class="alert-title" id="alert-title">Alert!</div>
-                    <div class="alert-text" id="alert-text">Danger detected in the system</div>
+        <!-- Row 1: Lock + Environment + Wind -->
+        <div class="grid">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="fas fa-lock icon-lock"></i> Door Lock Status</div>
                 </div>
-                <button class="alert-close" onclick="closeAlert()">
-                    <i class="fas fa-xmark"></i>
-                </button>
-            </div>
-
-            <!-- Lock + Environment -->
-            <div class="grid">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <i class="fas fa-lock icon-lock"></i>
-                            Door Lock Status
-                        </div>
-                    </div>
-                    <div class="lock-status" id="lock-status">
-                        <i class="fas fa-lock-open" id="lock-icon"></i>
-                        <div class="lock-info">
-                            <h4>Current Status</h4>
-                            <p id="lock-text">Waiting for data...</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <i class="fas fa-temperature-half icon-temp"></i>
-                            Environment
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 24px; margin-top: 8px;">
-                        <div>
-                            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Temperature</div>
-                            <div class="value-display">
-                                <span id="temp-value">--</span>
-                                <span class="value-unit">°C</span>
-                            </div>
-                        </div>
-                        <div>
-                            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Humidity</div>
-                            <div class="value-display">
-                                <span id="hum-value">--</span>
-                                <span class="value-unit">%</span>
-                            </div>
-                        </div>
+                <div class="lock-status" id="lock-status">
+                    <i class="fas fa-lock-open" id="lock-icon"></i>
+                    <div class="lock-info">
+                        <h4>Current Status</h4>
+                        <p id="lock-text">Waiting for data...</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Sensors -->
-            <div class="grid">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title"><i class="fas fa-wind icon-gas"></i> Gas (MQ2)</div>
-                        <span class="status-badge badge-safe" id="gas-badge"><i class="fas fa-check-circle"></i> Safe</span>
-                    </div>
-                    <div class="value-display"><span id="gas-value">0</span><span class="value-unit"> ppm</span></div>
-                    <div class="progress-bar"><div class="progress-fill" id="gas-bar" style="width:0%; background: var(--success);"></div></div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="fas fa-temperature-half icon-temp"></i> Environment</div>
                 </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title"><i class="fas fa-cloud-rain icon-rain"></i> Rain Detector</div>
-                        <span class="status-badge badge-safe" id="rain-badge"><i class="fas fa-check-circle"></i> Dry</span>
+                <div style="display:flex; gap:20px; margin-top:8px; flex-wrap:wrap;">
+                    <div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Temperature</div>
+                        <div class="value-display"><span id="temp-value">--</span><span class="value-unit">°C</span></div>
                     </div>
-                    <div class="value-display"><span id="rain-value">0</span><span class="value-unit"> units</span></div>
-                    <div class="progress-bar"><div class="progress-fill" id="rain-bar" style="width:0%; background: var(--info);"></div></div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title"><i class="fas fa-fire icon-flame"></i> Flame Sensor</div>
-                        <span class="status-badge badge-safe" id="flame-badge"><i class="fas fa-check-circle"></i> Safe</span>
+                    <div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Humidity</div>
+                        <div class="value-display"><span id="hum-value">--</span><span class="value-unit">%</span></div>
                     </div>
-                    <div class="value-display" id="flame-display" style="font-size: 24px; margin-top: 16px;">
-                        <i class="fas fa-shield-halved" style="color: var(--success);"></i>
-                        <span style="font-size: 16px; margin-left: 8px; color: var(--text-muted);">Safe</span>
+                    <div>
+                        <!-- NEW: Wind Speed -->
+                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">
+                            <i class="fas fa-wind" style="color:var(--info);margin-right:4px;"></i>Wind Speed
+                        </div>
+                        <div class="value-display"><span id="wind-value">--</span><span class="value-unit">km/h</span></div>
                     </div>
                 </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title"><i class="fas fa-microphone icon-sound"></i> Sound Level</div>
-                        <span class="status-badge badge-safe" id="sound-badge"><i class="fas fa-check-circle"></i> Quiet</span>
-                    </div>
-                    <div class="value-display"><span id="sound-value">0</span><span class="value-unit"> dB</span></div>
-                    <div class="progress-bar"><div class="progress-fill" id="sound-bar" style="width:0%; background: var(--success);"></div></div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title"><i class="fas fa-lightbulb icon-led"></i> LED Control</div>
-                        <div class="toggle-switch" id="led-toggle" onclick="toggleLED()"></div>
-                    </div>
-                    <div style="margin-top: 16px; color: var(--text-muted); font-size: 14px;">
-                        <i class="fas fa-info-circle"></i>
-                        <span id="led-status">LED is currently OFF</span>
-                    </div>
-                </div>
-            </div>
-
-            <div style="text-align: center; color: #475569; font-size: 12px; margin-top: 20px;">
-                Connected via HiveMQ Cloud • Real-time MQTT • <span id="last-update">Waiting for data...</span>
             </div>
         </div>
-    </div>
 
-    <script type="module">
-        import mqtt from 'https://unpkg.com/mqtt/dist/mqtt.esm.js';
+        <!-- Row 2: Gate Card + Gate Counter -->
+        <div class="grid">
 
-        // ═══════════════════════════════════════════════════════════
-        // CONFIGURATION — EDIT THESE HIVEMQ VALUES
-        // ═══════════════════════════════════════════════════════════
-        // IMPORTANT: Use your ACTUAL HiveMQ credentials, not placeholders!
-        const HIVEMQ_HOST     = 'wss://246af74b254c432aa22e0770b641823d.s1.eu.hivemq.cloud:8884/mqtt';
-        const HIVEMQ_USERNAME = 'esp32_user';        // ← Your HiveMQ username
-        const HIVEMQ_PASSWORD = 'MyActualPassword123!'; // ← YOUR ACTUAL PASSWORD HERE
-        const CLIENT_ID       = 'SmartHome_Dashboard_' + Math.random().toString(16).substr(2, 8);
+            <!-- Gate Status Card (NEW) -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="fas fa-archway icon-gate"></i> Gate Status</div>
+                    <span class="status-badge" id="gate-badge" style="background:rgba(239,68,68,0.15);color:var(--danger);">
+                        <i class="fas fa-times-circle"></i> Closed
+                    </span>
+                </div>
+                <div class="gate-body gate-closed" id="gate-body">
+                    <i class="fas fa-archway gate-big-icon" id="gate-icon" style="color:var(--danger);"></i>
+                    <div class="gate-info">
+                        <h4>Gate State</h4>
+                        <p id="gate-text">CLOSED</p>
+                        <div class="gate-sub" id="gate-sub">Waiting for NRF command...</div>
+                    </div>
+                </div>
+            </div>
 
-        // MQTT Topics (must match ESP32 code)
-        const TOPIC_SENSORS = 'smarthome/sensors';
-        const TOPIC_ALERTS  = 'smarthome/alerts';
-        const TOPIC_CMD_LED = 'smarthome/cmd/led';
-        const TOPIC_STATUS  = 'smarthome/status';
-        const TOPIC_LOCK    = 'smarthome/lock';
+            <!-- Gate Open Counter Card (NEW) -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="fas fa-hashtag icon-count"></i> Gate Opens Today</div>
+                    <button onclick="resetGateCounter()" title="Reset counter"
+                        style="background:none;border:1px solid var(--border);color:var(--text-muted);
+                               border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;transition:all 0.2s;">
+                        <i class="fas fa-rotate-left"></i> Reset
+                    </button>
+                </div>
+                <div class="counter-number" id="gate-counter">0</div>
+                <div class="counter-label">Total gate open commands received</div>
+                <div style="margin-top:12px;font-size:12px;color:var(--text-muted);">
+                    <i class="fas fa-clock"></i> Last open: <span id="last-open-time">—</span>
+                </div>
+            </div>
+        </div>
 
-        // Login credentials
-        const VALID_USERNAME = "Homies2026";
-        const VALID_PASSWORD = "123456";
+        <!-- Sensors Row -->
+        <div class="grid">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="fas fa-wind icon-gas"></i> Gas (MQ2)</div>
+                    <span class="status-badge badge-safe" id="gas-badge"><i class="fas fa-check-circle"></i> Safe</span>
+                </div>
+                <div class="value-display"><span id="gas-value">0</span><span class="value-unit"> ppm</span></div>
+                <div class="progress-bar"><div class="progress-fill" id="gas-bar" style="width:0%;background:var(--success);"></div></div>
+            </div>
 
-        // ═══════════════════════════════════════════════════════════
-        // STATE
-        // ═══════════════════════════════════════════════════════════
-        let isLoggedIn = false;
-        let ledState = false;
-        let lastAlertState = false;
-        let loginAttempts = 0;
-        const MAX_ATTEMPTS = 3;
-        let mqttClient = null;
-        let lastDataTime = 0;
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="fas fa-cloud-rain icon-rain"></i> Rain Detector</div>
+                    <span class="status-badge badge-safe" id="rain-badge"><i class="fas fa-check-circle"></i> Dry</span>
+                </div>
+                <div class="value-display"><span id="rain-value">0</span><span class="value-unit"> units</span></div>
+                <div class="progress-bar"><div class="progress-fill" id="rain-bar" style="width:0%;background:var(--info);"></div></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="fas fa-fire icon-flame"></i> Flame Sensor</div>
+                    <span class="status-badge badge-safe" id="flame-badge"><i class="fas fa-check-circle"></i> Safe</span>
+                </div>
+                <div class="value-display" id="flame-display" style="font-size:24px;margin-top:16px;">
+                    <i class="fas fa-shield-halved" style="color:var(--success);"></i>
+                    <span style="font-size:16px;margin-left:8px;color:var(--text-muted);">Safe</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="fas fa-microphone icon-sound"></i> Sound Level</div>
+                    <span class="status-badge badge-safe" id="sound-badge"><i class="fas fa-check-circle"></i> Quiet</span>
+                </div>
+                <div class="value-display"><span id="sound-value">0</span><span class="value-unit"> dB</span></div>
+                <div class="progress-bar"><div class="progress-fill" id="sound-bar" style="width:0%;background:var(--success);"></div></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="fas fa-lightbulb icon-led"></i> LED Control</div>
+                    <div class="toggle-switch" id="led-toggle" onclick="toggleLED()"></div>
+                </div>
+                <div style="margin-top:16px;color:var(--text-muted);font-size:14px;">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="led-status">LED is currently OFF</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align:center;color:#475569;font-size:12px;margin-top:20px;">
+            Connected via HiveMQ Cloud &bull; Real-time MQTT &bull; <span id="last-update">Waiting for data...</span>
+        </div>
+    </div><!-- /container -->
+</div><!-- /dashboard -->
+
+<script type="module">
+import mqtt from 'https://unpkg.com/mqtt/dist/mqtt.esm.js';
 
 // ═══════════════════════════════════════════════════════════
-        // SPLASH & LOGIN
-        // ═══════════════════════════════════════════════════════════
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                document.getElementById('splash').classList.add('hidden');
-                document.getElementById('login-screen').classList.add('active');
-            }, 2000);
+// CONFIGURATION — Edit these HiveMQ values
+// ═══════════════════════════════════════════════════════════
+const HIVEMQ_HOST     = 'wss://246af74b254c432aa22e0770b641823d.s1.eu.hivemq.cloud:8884/mqtt';
+const HIVEMQ_USERNAME = 'esp32_user';
+const HIVEMQ_PASSWORD = 'MyActualPassword123!';
+const CLIENT_ID       = 'SmartHome_Dashboard_' + Math.random().toString(16).substr(2, 8);
+
+// MQTT Topics (must match ESP32 code)
+const TOPIC_SENSORS  = 'smarthome/sensors';
+const TOPIC_ALERTS   = 'smarthome/alerts';
+const TOPIC_CMD_LED  = 'smarthome/cmd/led';
+const TOPIC_STATUS   = 'smarthome/status';
+const TOPIC_LOCK     = 'smarthome/lock';
+const TOPIC_GATE     = 'smarthome/gate';      // ← Gate open/close commands from NRF / ESP32 #2
+const TOPIC_GATE_CMD = 'smarthome/gate/cmd';  // ← Dashboard can publish here if needed
+
+// Login credentials
+const VALID_USERNAME = "Homies2026";
+const VALID_PASSWORD = "123456";
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let isLoggedIn    = false;
+let ledState      = false;
+let lastAlertState = false;
+let loginAttempts = 0;
+const MAX_ATTEMPTS = 3;
+let mqttClient    = null;
+let lastDataTime  = 0;
+
+// Gate state machine
+// States: 'closed' | 'open' | 'closing'
+let gateState     = 'closed';
+let gateCounter   = parseInt(localStorage.getItem('gateCounter') || '0', 10);
+
+// ═══════════════════════════════════════════════════════════
+// SPLASH & LOGIN
+// ═══════════════════════════════════════════════════════════
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        document.getElementById('splash').classList.add('hidden');
+        document.getElementById('login-screen').classList.add('active');
+    }, 2000);
+});
+
+document.getElementById('password').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+document.getElementById('username').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+
+// ── Show/hide password ──────────────────────────────────────
+window.togglePasswordVisibility = function() {
+    const input = document.getElementById('password');
+    const icon  = document.getElementById('pw-eye-icon');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+};
+
+function handleLogin() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const errorMsg  = document.getElementById('error-msg');
+    const errorText = document.getElementById('error-text');
+    errorMsg.classList.remove('show');
+
+    if (!username || !password) {
+        errorText.textContent = "Please enter both username and password";
+        errorMsg.classList.add('show');
+        return;
+    }
+
+    if (username === VALID_USERNAME && password === VALID_PASSWORD) {
+        isLoggedIn = true;
+        loginAttempts = 0;
+        document.getElementById('login-screen').classList.remove('active');
+        document.getElementById('dashboard').classList.add('active');
+        connectMQTT();
+        fetchWeatherData();
+        // Restore counter display
+        document.getElementById('gate-counter').textContent = gateCounter;
+    } else {
+        loginAttempts++;
+        const remaining = MAX_ATTEMPTS - loginAttempts;
+        if (loginAttempts >= MAX_ATTEMPTS) {
+            errorText.textContent = `Too many failed attempts. Please wait 30 seconds.`;
+            errorMsg.classList.add('show');
+            const btn = document.getElementById('login-btn');
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            let countdown = 30;
+            const timer = setInterval(() => {
+                countdown--;
+                errorText.textContent = `Locked out. Try again in ${countdown}s...`;
+                if (countdown <= 0) {
+                    clearInterval(timer);
+                    loginAttempts = 0;
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    errorMsg.classList.remove('show');
+                }
+            }, 1000);
+        } else {
+            errorText.textContent = `Invalid credentials. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.`;
+            errorMsg.classList.add('show');
+        }
+        document.getElementById('password').value = '';
+        document.getElementById('password').focus();
+    }
+}
+window.handleLogin = handleLogin;
+
+window.handleLogout = function() {
+    isLoggedIn = false;
+    if (mqttClient) mqttClient.end();
+    document.getElementById('dashboard').classList.remove('active');
+    document.getElementById('login-screen').classList.add('active');
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+    document.getElementById('error-msg').classList.remove('show');
+    loginAttempts = 0;
+};
+
+// ═══════════════════════════════════════════════════════════
+// MQTT CONNECTION
+// ═══════════════════════════════════════════════════════════
+function connectMQTT() {
+    updateMQTTStatus('connecting', 'Connecting to HiveMQ Cloud...');
+    const options = {
+        clientId: CLIENT_ID,
+        username: HIVEMQ_USERNAME,
+        password: HIVEMQ_PASSWORD,
+        protocol: 'wss',
+        reconnectPeriod: 5000,
+        connectTimeout: 30000,
+        clean: true,
+        keepalive: 60,
+        rejectUnauthorized: false
+    };
+
+    try {
+        mqttClient = mqtt.connect(HIVEMQ_HOST, options);
+    } catch (err) {
+        updateMQTTStatus('error', 'Failed to initialize connection');
+        return;
+    }
+
+    mqttClient.on('connect', () => {
+        updateMQTTStatus('connected', 'Connected to HiveMQ Cloud');
+        updateConnectionStatus(true);
+        [TOPIC_SENSORS, TOPIC_ALERTS, TOPIC_STATUS, TOPIC_LOCK, TOPIC_GATE].forEach(t => {
+            mqttClient.subscribe(t);
         });
+    });
 
-        document.getElementById('password').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleLogin();
-        });
-        document.getElementById('username').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleLogin();
-        });
+    mqttClient.on('message', (topic, message) => {
+        handleMQTTMessage(topic, message.toString());
+    });
 
-        function handleLogin() {
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
-            const errorMsg = document.getElementById('error-msg');
-            const errorText = document.getElementById('error-text');
-            errorMsg.classList.remove('show');
+    mqttClient.on('error',     (err) => { updateMQTTStatus('error',       'Connection error: ' + err.message); updateConnectionStatus(false); });
+    mqttClient.on('close',     ()    => { updateMQTTStatus('disconnected', 'Disconnected — reconnecting...');   updateConnectionStatus(false); });
+    mqttClient.on('offline',   ()    => { updateMQTTStatus('offline',      'Offline');                          updateConnectionStatus(false); });
+    mqttClient.on('reconnect', ()    => { updateMQTTStatus('connecting',   'Reconnecting...'); });
+}
 
-            if (!username || !password) {
-                errorText.textContent = "Please enter both username and password";
-                errorMsg.classList.add('show');
-                return;
+function updateMQTTStatus(state, text) {
+    const dot = document.getElementById('mqtt-dot');
+    const txt = document.getElementById('mqtt-text');
+    txt.textContent = text;
+    dot.className = 'mqtt-status-dot';
+    if (state === 'connected') dot.classList.add('connected');
+}
+function updateConnectionStatus(connected) {
+    const dot    = document.getElementById('conn-dot');
+    const status = document.getElementById('conn-status');
+    if (connected) { dot.classList.remove('offline'); status.textContent = 'Live'; }
+    else           { dot.classList.add('offline');    status.textContent = 'Offline'; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// HANDLE INCOMING MQTT MESSAGES
+// ═══════════════════════════════════════════════════════════
+function handleMQTTMessage(topic, payload) {
+    try {
+        const data = JSON.parse(payload);
+
+        // ── Sensor data ──
+        if (topic === TOPIC_SENSORS) {
+            lastDataTime = Date.now();
+            document.getElementById('last-update').textContent = 'Last update: ' + new Date().toLocaleTimeString();
+            document.getElementById('last-update').style.color = 'var(--text-muted)';
+
+            updateGasSensor(data.gas || 0, data.gasDetected || false);
+            updateRainSensor(data.rain || 0, data.rainDetected || false);
+            updateFlameSensor(data.flameDetected || false);
+            updateSoundSensor(data.sound || 0, data.soundDetected || false);
+            updateLockStatus(data.lockOpen || false);
+
+            const anyDanger = data.gasDetected || data.flameDetected || data.rainDetected;
+            if (anyDanger && !lastAlertState) {
+                const msgs = [];
+                if (data.flameDetected) msgs.push('🔥 FIRE');
+                if (data.gasDetected)   msgs.push('💨 GAS LEAK');
+                if (data.rainDetected)  msgs.push('🌧️ RAIN');
+                showAlert('DANGER DETECTED!', msgs.join(' + ') + ' — Check your home!');
             }
-
-            if (username === VALID_USERNAME && password === VALID_PASSWORD) {
-                isLoggedIn = true;
-                loginAttempts = 0;
-                document.getElementById('login-screen').classList.remove('active');
-                document.getElementById('dashboard').classList.add('active');
-                connectMQTT();
-                fetchWeatherData();
-            } else {
-                loginAttempts++;
-                const remaining = MAX_ATTEMPTS - loginAttempts;
-                if (loginAttempts >= MAX_ATTEMPTS) {
-                    errorText.textContent = `Too many failed attempts. Please wait 30 seconds.`;
-                    errorMsg.classList.add('show');
-                    const btn = document.querySelector('.btn-primary');
-                    btn.disabled = true;
-                    btn.style.opacity = '0.5';
-                    let countdown = 30;
-                    const timer = setInterval(() => {
-                        countdown--;
-                        errorText.textContent = `Locked out. Try again in ${countdown}s...`;
-                        if (countdown <= 0) {
-                            clearInterval(timer);
-                            loginAttempts = 0;
-                            btn.disabled = false;
-                            btn.style.opacity = '1';
-                            errorMsg.classList.remove('show');
-                        }
-                    }, 1000);
-                } else {
-                    errorText.textContent = `Invalid credentials. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.`;
-                    errorMsg.classList.add('show');
-                }
-                document.getElementById('password').value = '';
-                document.getElementById('password').focus();
-            }
+            if (!anyDanger) closeAlert();
+            lastAlertState = anyDanger;
         }
 
-        window.handleLogout = function() {
-            isLoggedIn = false;
-            if (mqttClient) mqttClient.end();
-            document.getElementById('dashboard').classList.remove('active');
-            document.getElementById('login-screen').classList.add('active');
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-            document.getElementById('error-msg').classList.remove('show');
-            loginAttempts = 0;
-            addLog('Logged out', 'info');
-        };
-
-        // ═══════════════════════════════════════════════════════════
-        // MQTT CONNECTION — FIXED FOR HIVEMQ CLOUD
-        // ═══════════════════════════════════════════════════════════
-        function connectMQTT() {
-            updateMQTTStatus('connecting', 'Connecting to HiveMQ Cloud...');
-
-            // FIX: Proper connection options for HiveMQ Cloud WebSocket
-            const options = {
-                clientId: CLIENT_ID,
-                username: HIVEMQ_USERNAME,
-                password: HIVEMQ_PASSWORD,
-                protocol: 'wss',
-                reconnectPeriod: 5000,      // Auto-reconnect every 5s
-                connectTimeout: 30000,      // 30 second timeout
-                clean: true,                // Clean session
-                keepalive: 60,              // Keepalive interval
-                rejectUnauthorized: false // Accept self-signed certs (for testing)
-            };
-
-            try {
-                // Connect using the URL string directly
-                mqttClient = mqtt.connect(HIVEMQ_HOST, options);
-                } catch (err) {
-                
-                updateMQTTStatus('error', 'Failed to initialize connection');
-                return;
-            }
-
-            mqttClient.on('connect', () => {
-                updateMQTTStatus('connected', 'Connected to HiveMQ Cloud');
-                updateConnectionStatus(true);
-
-                // Subscribe to all topics
-                mqttClient.subscribe(TOPIC_SENSORS, (err) => {
-                    
-                });
-                mqttClient.subscribe(TOPIC_ALERTS, (err) => {
-                    
-                });
-                mqttClient.subscribe(TOPIC_STATUS, (err) => {
-                    
-                });
-                mqttClient.subscribe(TOPIC_LOCK, (err) => {
-                    
-                });
-            });
-
-            mqttClient.on('message', (topic, message) => {
-                const payload = message.toString();
-                handleMQTTMessage(topic, payload);
-            });
-
-            mqttClient.on('error', (err) => {
-                updateMQTTStatus('error', 'Connection error: ' + err.message);
-                updateConnectionStatus(false);
-            });
-
-            mqttClient.on('close', () => {
-                updateMQTTStatus('disconnected', 'Disconnected — reconnecting...');
-                updateConnectionStatus(false);
-            });
-
-            mqttClient.on('offline', () => {
-                updateMQTTStatus('offline', 'Offline');
-                updateConnectionStatus(false);
-            });
-
-            mqttClient.on('reconnect', () => {
-                updateMQTTStatus('connecting', 'Reconnecting...');
-            });
+        // ── Alerts ──
+        if (topic === TOPIC_ALERTS && data.alert) {
+            showAlert('ALERT!', data.message || 'Danger detected!');
         }
 
-        function updateMQTTStatus(state, text) {
-            const dot = document.getElementById('mqtt-dot');
-            const txt = document.getElementById('mqtt-text');
-            txt.textContent = text;
-            dot.className = 'mqtt-status-dot';
-            if (state === 'connected') dot.classList.add('connected');
+        // ── Lock ──
+        if (topic === TOPIC_LOCK && data.event === 'unlocked') {
+            showAlert('Door Unlocked', 'Smart lock opened via keypad');
         }
 
-        function updateConnectionStatus(connected) {
-            const dot = document.getElementById('conn-dot');
-            const status = document.getElementById('conn-status');
-            if (connected) {
-                dot.classList.remove('offline');
-                status.textContent = 'Live';
-            } else {
-                dot.classList.add('offline');
-                status.textContent = 'Offline';
-            }
+        // ── Status ──
+        if (topic === TOPIC_STATUS && data.status === 'online') {
+            console.log('[STATUS] ESP32 is online');
         }
 
-        // ═══════════════════════════════════════════════════════════
-        // HANDLE INCOMING MQTT MESSAGES
-        // ═══════════════════════════════════════════════════════════
-        function handleMQTTMessage(topic, payload) {
-            try {
-                const data = JSON.parse(payload);
+        // ══════════════════════════════════════════════════
+        // GATE LOGIC (NEW)
+        //
+        // Flow:
+        //   1. NRF (ESP32 #1) sends  → TOPIC_GATE  { "event": "open" }
+        //      → Dashboard shows OPEN, increments counter
+        //      → Dashboard publishes to TOPIC_GATE_CMD { "cmd": "close" }
+        //        so ESP32 #2 closes the gate physically
+        //   2. ESP32 #2 confirms close → TOPIC_GATE { "event": "closed" }
+        //      → Dashboard shows CLOSED
+        //
+        //   If ESP32 #2 is still closing → TOPIC_GATE { "event": "closing" }
+        //      → Dashboard shows CLOSING... state
+        // ══════════════════════════════════════════════════
+        if (topic === TOPIC_GATE) {
+            const ev = (data.event || '').toLowerCase();
 
-                if (topic === TOPIC_SENSORS) {
-                    lastDataTime = Date.now();
-                    document.getElementById('last-update').textContent = 'Last update: ' + new Date().toLocaleTimeString();
-                    document.getElementById('last-update').style.color = 'var(--text-muted)';
+            if (ev === 'open' || ev === 'opened') {
+                // Increment counter
+                gateCounter++;
+                localStorage.setItem('gateCounter', gateCounter);
+                document.getElementById('gate-counter').textContent = gateCounter;
+                document.getElementById('last-open-time').textContent = new Date().toLocaleTimeString();
 
-                    updateGasSensor(data.gas || 0, data.gasDetected || false);
-                    updateRainSensor(data.rain || 0, data.rainDetected || false);
-                    updateFlameSensor(data.flameDetected || false);
-                    updateSoundSensor(data.sound || 0, data.soundDetected || false);
-                    updateLockStatus(data.lockOpen || false);
+                // Show OPEN state
+                setGateState('open');
 
-                    const anyDanger = data.gasDetected || data.flameDetected || data.rainDetected;
-                    if (anyDanger && !lastAlertState) {
-                        let msgs = [];
-                        if (data.flameDetected) msgs.push('🔥 FIRE');
-                        if (data.gasDetected) msgs.push('💨 GAS LEAK');
-                        if (data.rainDetected) msgs.push('🌧️ RAIN');
-                        showAlert('DANGER DETECTED!', msgs.join(' + ') + ' — Check your home!');
-                    }
-                    if (!anyDanger) closeAlert();
-                    lastAlertState = anyDanger;
+                // Tell ESP32 #2 to close the gate
+                if (mqttClient && mqttClient.connected) {
+                    mqttClient.publish(TOPIC_GATE_CMD, JSON.stringify({ cmd: 'close' }));
+                    console.log('[GATE] Sent close command to ESP32 #2');
                 }
 
-                if (topic === TOPIC_ALERTS) {
-                    if (data.alert) {
-                        showAlert('ALERT!', data.message || 'Danger detected!');
-                    }
-                }
+                // While waiting for close confirmation, show "closing" after short delay
+                setTimeout(() => {
+                    if (gateState === 'open') setGateState('closing');
+                }, 3000);
 
-                if (topic === TOPIC_LOCK) {
-                    if (data.event === 'unlocked') {
-                        showAlert('Door Unlocked', 'Smart lock opened via keypad');
-                    }
-                }
+            } else if (ev === 'closing') {
+                setGateState('closing');
 
-                if (topic === TOPIC_STATUS) {
-                    if (data.status === 'online') {
-                        console.log('[STATUS] ESP32 is online');
-                    }
-                }
-
-            } catch (e) {
-                console.error('JSON parse error:', e);
+            } else if (ev === 'closed') {
+                setGateState('closed');
             }
         }
 
-        // ═══════════════════════════════════════════════════════════
-        // SENSOR UI UPDATES
-        // ═══════════════════════════════════════════════════════════
-        function updateGasSensor(value, detected) {
-            document.getElementById('gas-value').textContent = value;
-            const pct = Math.min((value / 5000) * 100, 100);
-            const bar = document.getElementById('gas-bar');
-            const badge = document.getElementById('gas-badge');
-            bar.style.width = pct + '%';
-            if (detected) {
-                bar.style.background = 'var(--danger)';
-                badge.className = 'status-badge badge-danger';
-                badge.innerHTML = '<i class="fas fa-triangle-exclamation"></i> GAS LEAK!';
-            } else {
-                bar.style.background = 'var(--success)';
-                badge.className = 'status-badge badge-safe';
-                badge.innerHTML = '<i class="fas fa-check-circle"></i> Safe';
-            }
-        }
+    } catch (e) {
+        console.error('[MQTT] JSON parse error:', e);
+    }
+}
 
-        function updateRainSensor(value, detected) {
-            document.getElementById('rain-value').textContent = value;
-            const pct = Math.min((value / 4000) * 100, 100);
-            const bar = document.getElementById('rain-bar');
-            const badge = document.getElementById('rain-badge');
-            bar.style.width = pct + '%';
-            if (detected) {
-                badge.className = 'status-badge badge-danger';
-                badge.innerHTML = '<i class="fas fa-cloud-rain"></i> RAINING!';
-            } else {
-                badge.className = 'status-badge badge-safe';
-                badge.innerHTML = '<i class="fas fa-check-circle"></i> Dry';
-            }
-        }
+// ═══════════════════════════════════════════════════════════
+// GATE STATE MACHINE UI (NEW)
+// ═══════════════════════════════════════════════════════════
+function setGateState(state) {
+    gateState = state;
+    const body  = document.getElementById('gate-body');
+    const icon  = document.getElementById('gate-icon');
+    const text  = document.getElementById('gate-text');
+    const sub   = document.getElementById('gate-sub');
+    const badge = document.getElementById('gate-badge');
 
-        function updateFlameSensor(detected) {
-            const badge = document.getElementById('flame-badge');
-            const display = document.getElementById('flame-display');
-            if (detected) {
-                badge.className = 'status-badge badge-danger';
-                badge.innerHTML = '<i class="fas fa-fire"></i> FIRE!';
-                display.innerHTML = '<i class="fas fa-fire" style="color: var(--danger); animation: pulse 0.5s infinite;"></i><span style="font-size: 16px; margin-left: 8px; color: var(--danger); font-weight: 700;">FIRE ALERT!</span>';
-            } else {
-                badge.className = 'status-badge badge-safe';
-                badge.innerHTML = '<i class="fas fa-check-circle"></i> Safe';
-                display.innerHTML = '<i class="fas fa-shield-halved" style="color: var(--success);"></i><span style="font-size: 16px; margin-left: 8px; color: var(--text-muted);">Safe</span>';
-            }
-        }
+    body.className = 'gate-body';
 
-        function updateSoundSensor(value, detected) {
-            document.getElementById('sound-value').textContent = value;
-            const pct = Math.min((value / 2000) * 100, 100);
-            const bar = document.getElementById('sound-bar');
-            const badge = document.getElementById('sound-badge');
-            bar.style.width = pct + '%';
-            if (detected) {
-                bar.style.background = 'var(--warning)';
-                badge.className = 'status-badge badge-danger';
-                badge.innerHTML = '<i class="fas fa-volume-high"></i> LOUD!';
-            } else {
-                bar.style.background = 'var(--success)';
-                badge.className = 'status-badge badge-safe';
-                badge.innerHTML = '<i class="fas fa-check-circle"></i> Quiet';
-            }
-        }
+    if (state === 'open') {
+        body.classList.add('gate-open');
+        icon.style.color  = 'var(--success)';
+        text.textContent  = 'OPEN';
+        sub.textContent   = 'Received OPEN from NRF — sending close to ESP32 #2...';
+        badge.style.background = 'rgba(16,185,129,0.15)';
+        badge.style.color      = 'var(--success)';
+        badge.innerHTML = '<i class="fas fa-door-open"></i> Open';
 
-        function updateLockStatus(isUnlocked) {
-            const statusDiv = document.getElementById('lock-status');
-            const icon = document.getElementById('lock-icon');
-            const text = document.getElementById('lock-text');
-            if (isUnlocked) {
-                statusDiv.classList.remove('locked');
-                icon.className = 'fas fa-lock-open';
-                icon.style.color = 'var(--success)';
-                text.textContent = 'UNLOCKED — Welcome Home!';
-            } else {
-                statusDiv.classList.add('locked');
-                icon.className = 'fas fa-lock';
-                icon.style.color = 'var(--danger)';
-                text.textContent = 'LOCKED — Secure';
-            }
-        }
+    } else if (state === 'closing') {
+        body.classList.add('gate-closing');
+        icon.style.color  = 'var(--warning)';
+        text.textContent  = 'CLOSING...';
+        sub.textContent   = 'ESP32 #2 is closing the gate — waiting for confirmation...';
+        badge.style.background = 'rgba(245,158,11,0.15)';
+        badge.style.color      = 'var(--warning)';
+        badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Closing';
 
-        // ═══════════════════════════════════════════════════════════
-        // LED CONTROL
-        // ═══════════════════════════════════════════════════════════
-        window.toggleLED = function() {
-            ledState = !ledState;
-            const toggle = document.getElementById('led-toggle');
-            const status = document.getElementById('led-status');
+    } else { // closed
+        body.classList.add('gate-closed');
+        icon.style.color  = 'var(--danger)';
+        text.textContent  = 'CLOSED';
+        sub.textContent   = 'Gate secured — waiting for next NRF command';
+        badge.style.background = 'rgba(239,68,68,0.15)';
+        badge.style.color      = 'var(--danger)';
+        badge.innerHTML = '<i class="fas fa-times-circle"></i> Closed';
+    }
+}
 
-            if (ledState) {
-                toggle.classList.add('active');
-                status.innerHTML = '<i class="fas fa-check-circle" style="color: var(--primary);"></i> LED is currently ON';
-            } else {
-                toggle.classList.remove('active');
-                status.innerHTML = '<i class="fas fa-info-circle"></i> LED is currently OFF';
-            }
+window.resetGateCounter = function() {
+    gateCounter = 0;
+    localStorage.setItem('gateCounter', 0);
+    document.getElementById('gate-counter').textContent = '0';
+    document.getElementById('last-open-time').textContent = '—';
+};
 
-            if (mqttClient && mqttClient.connected) {
-                const cmd = ledState ? 'ON' : 'OFF';
-                mqttClient.publish(TOPIC_CMD_LED, cmd);
-                addLog(`TX LED command: ${cmd}`, 'info');
-            } else {
-                console.warn('[MQTT] Not connected, cannot send LED command');
-            }
-        };
+// ═══════════════════════════════════════════════════════════
+// SENSOR UI UPDATES
+// ═══════════════════════════════════════════════════════════
+function updateGasSensor(value, detected) {
+    document.getElementById('gas-value').textContent = value;
+    const pct = Math.min((value / 5000) * 100, 100);
+    const bar = document.getElementById('gas-bar');
+    const badge = document.getElementById('gas-badge');
+    bar.style.width = pct + '%';
+    if (detected) {
+        bar.style.background = 'var(--danger)';
+        badge.className = 'status-badge badge-danger';
+        badge.innerHTML = '<i class="fas fa-triangle-exclamation"></i> GAS LEAK!';
+    } else {
+        bar.style.background = 'var(--success)';
+        badge.className = 'status-badge badge-safe';
+        badge.innerHTML = '<i class="fas fa-check-circle"></i> Safe';
+    }
+}
+function updateRainSensor(value, detected) {
+    document.getElementById('rain-value').textContent = value;
+    const pct = Math.min((value / 4000) * 100, 100);
+    const bar = document.getElementById('rain-bar');
+    const badge = document.getElementById('rain-badge');
+    bar.style.width = pct + '%';
+    if (detected) {
+        badge.className = 'status-badge badge-danger';
+        badge.innerHTML = '<i class="fas fa-cloud-rain"></i> RAINING!';
+    } else {
+        badge.className = 'status-badge badge-safe';
+        badge.innerHTML = '<i class="fas fa-check-circle"></i> Dry';
+    }
+}
+function updateFlameSensor(detected) {
+    const badge   = document.getElementById('flame-badge');
+    const display = document.getElementById('flame-display');
+    if (detected) {
+        badge.className = 'status-badge badge-danger';
+        badge.innerHTML = '<i class="fas fa-fire"></i> FIRE!';
+        display.innerHTML = '<i class="fas fa-fire" style="color:var(--danger);animation:pulse 0.5s infinite;"></i><span style="font-size:16px;margin-left:8px;color:var(--danger);font-weight:700;">FIRE ALERT!</span>';
+    } else {
+        badge.className = 'status-badge badge-safe';
+        badge.innerHTML = '<i class="fas fa-check-circle"></i> Safe';
+        display.innerHTML = '<i class="fas fa-shield-halved" style="color:var(--success);"></i><span style="font-size:16px;margin-left:8px;color:var(--text-muted);">Safe</span>';
+    }
+}
+function updateSoundSensor(value, detected) {
+    document.getElementById('sound-value').textContent = value;
+    const pct = Math.min((value / 2000) * 100, 100);
+    const bar = document.getElementById('sound-bar');
+    const badge = document.getElementById('sound-badge');
+    bar.style.width = pct + '%';
+    if (detected) {
+        bar.style.background = 'var(--warning)';
+        badge.className = 'status-badge badge-danger';
+        badge.innerHTML = '<i class="fas fa-volume-high"></i> LOUD!';
+    } else {
+        bar.style.background = 'var(--success)';
+        badge.className = 'status-badge badge-safe';
+        badge.innerHTML = '<i class="fas fa-check-circle"></i> Quiet';
+    }
+}
+function updateLockStatus(isUnlocked) {
+    const statusDiv = document.getElementById('lock-status');
+    const icon = document.getElementById('lock-icon');
+    const text = document.getElementById('lock-text');
+    if (isUnlocked) {
+        statusDiv.classList.remove('locked');
+        icon.className = 'fas fa-lock-open';
+        icon.style.color = 'var(--success)';
+        text.textContent = 'UNLOCKED — Welcome Home!';
+    } else {
+        statusDiv.classList.add('locked');
+        icon.className = 'fas fa-lock';
+        icon.style.color = 'var(--danger)';
+        text.textContent = 'LOCKED — Secure';
+    }
+}
 
-        // ═══════════════════════════════════════════════════════════
-        // ALERT SYSTEM
-        // ═══════════════════════════════════════════════════════════
-        window.showAlert = function(title, message) {
-            document.getElementById('alert-title').textContent = title;
-            document.getElementById('alert-text').textContent = message;
-            document.getElementById('alert-banner').classList.add('show');
-        };
+// ═══════════════════════════════════════════════════════════
+// LED CONTROL
+// ═══════════════════════════════════════════════════════════
+window.toggleLED = function() {
+    ledState = !ledState;
+    const toggle = document.getElementById('led-toggle');
+    const status = document.getElementById('led-status');
+    if (ledState) {
+        toggle.classList.add('active');
+        status.innerHTML = '<i class="fas fa-check-circle" style="color:var(--primary);"></i> LED is currently ON';
+    } else {
+        toggle.classList.remove('active');
+        status.innerHTML = '<i class="fas fa-info-circle"></i> LED is currently OFF';
+    }
+    if (mqttClient && mqttClient.connected) {
+        mqttClient.publish(TOPIC_CMD_LED, ledState ? 'ON' : 'OFF');
+    }
+};
 
-        window.closeAlert = function() {
-            document.getElementById('alert-banner').classList.remove('show');
-        };
+// ═══════════════════════════════════════════════════════════
+// ALERT SYSTEM
+// ═══════════════════════════════════════════════════════════
+window.showAlert = function(title, message) {
+    document.getElementById('alert-title').textContent = title;
+    document.getElementById('alert-text').textContent  = message;
+    document.getElementById('alert-banner').classList.add('show');
+};
+window.closeAlert = function() {
+    document.getElementById('alert-banner').classList.remove('show');
+};
 
-        // ═══════════════════════════════════════════════════════════
-        // WEATHER DATA
-        // ═══════════════════════════════════════════════════════════
-        async function fetchWeatherData() {
-            try {
-                const lat = 24.7136;
-                const lon = 46.6753;
-                const res = await fetch(
-                    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m`
-                );
-                if (!res.ok) throw new Error('Weather API failed');
-                const data = await res.json();
-                document.getElementById('temp-value').textContent = Math.round(data.current.temperature_2m);
-                document.getElementById('hum-value').textContent = Math.round(data.current.relative_humidity_2m);
-                
-            } catch (error) {
-                
-                document.getElementById('temp-value').textContent = '--';
-                document.getElementById('hum-value').textContent = '--';
-            }
-        }
+// ═══════════════════════════════════════════════════════════
+// WEATHER DATA — Temperature + Humidity + Wind Speed (NEW)
+// ═══════════════════════════════════════════════════════════
+async function fetchWeatherData() {
+    try {
+        // Using Giza, Egypt coordinates (detected from your location)
+        const lat = 30.0131;
+        const lon = 31.2089;
+        const res = await fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+            `&current=temperature_2m,relative_humidity_2m,wind_speed_10m`
+        );
+        if (!res.ok) throw new Error('Weather API failed');
+        const d = await res.json();
+        document.getElementById('temp-value').textContent  = Math.round(d.current.temperature_2m);
+        document.getElementById('hum-value').textContent   = Math.round(d.current.relative_humidity_2m);
+        document.getElementById('wind-value').textContent  = Math.round(d.current.wind_speed_10m);
+    } catch (err) {
+        document.getElementById('temp-value').textContent  = '--';
+        document.getElementById('hum-value').textContent   = '--';
+        document.getElementById('wind-value').textContent  = '--';
+    }
+}
 
-        setInterval(fetchWeatherData, 300000);
+// Refresh weather every 5 minutes
+setInterval(fetchWeatherData, 300000);
 
-        // Check for data timeout
-        setInterval(() => {
-            if (isLoggedIn && Date.now() - lastDataTime > 10000 && lastDataTime > 0) {
-                document.getElementById('last-update').textContent = 'No data from ESP32...';
-                document.getElementById('last-update').style.color = 'var(--danger)';
-            }
-        }, 5000);
+// Check for ESP32 data timeout
+setInterval(() => {
+    if (isLoggedIn && Date.now() - lastDataTime > 10000 && lastDataTime > 0) {
+        document.getElementById('last-update').textContent = 'No data from ESP32...';
+        document.getElementById('last-update').style.color = 'var(--danger)';
+    }
+}, 5000);
 
-    </script>
+</script>
 </body>
 </html>
